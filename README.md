@@ -30,10 +30,17 @@ el usuario final no tendrá que instalarlas.
 ```powershell
 cargo test --workspace
 cargo run -- status
+cargo run -- gui
 ```
 
 El documento [IMPLEMENTATION.md](IMPLEMENTATION.md) contiene la especificación,
 las fuentes, los hitos y los criterios para publicar una versión.
+
+La compilación genera también `esq-gui.exe`, una vista gráfica sin consola.
+La instalación experimental está restringida a una VM desechable con un único
+usuario; consulta [el protocolo de pruebas](docs/experiments/windows.md).
+La selección automática después de reiniciar todavía no está implementada.
+Los comandos de instalación no se han validado en un sistema real.
 
 ## Licencia
 

@@ -3,6 +3,7 @@ name = "easy-spanish-quotes"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+default-run = "easy-spanish-quotes"
 
 [dependencies]
 esq-core = { path = "../core" }

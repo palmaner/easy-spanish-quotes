@@ -84,10 +84,21 @@ def generate():
             vk = data["scans"][str(prefix | s)]
             if vk: out.append(f'{{{s},{vk | 0x100}}},')
         out.append('{0,0}};')
-    out.extend(['static ESQ_NAME names[] = {{0,0}};',
-                'static const uint16_t *dead_names[] = {0};',
+    for ext in (0,1):
+        entries=[]
+        for key,name in data['key_names'].items():
+            key_ext,scan=map(int,key.split(':'))
+            if key_ext!=ext: continue
+            identifier=f'name_{ext}_{scan}'
+            encoded=name.encode('utf-16-le')
+            units=[int.from_bytes(encoded[i:i+2],'little') for i in range(0,len(encoded),2)]+[0]
+            out.append(f'static const uint16_t {identifier}[] = {{' + ','.join(map(str,units)) + '};')
+            entries.append(f'{{{scan},{identifier}}}')
+        table_name='names' if ext==0 else 'extended_names'
+        out.append(f'static ESQ_NAME {table_name}[] = {{' + ','.join(entries+['{0,0}']) + '};')
+    out.extend(['static const uint16_t *dead_names[] = {0};',
                 # Locale low word: AltGr bit; high word: layout version 1.
-                'static ESQ_TABLES tables = {&mods,character_tables,dead,names,names,dead_names,',
+                'static ESQ_TABLES tables = {&mods,character_tables,dead,names,extended_names,dead_names,',
                 'scans,128,e0,e1,0x00010001,0,0,0,4,0};',
                 '__declspec(dllexport) ESQ_TABLES *KbdLayerDescriptor(void) { return &tables; }'])
     destination = ROOT / "build/layout"

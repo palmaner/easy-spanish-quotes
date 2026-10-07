@@ -19,6 +19,8 @@ def inspect():
     u.ToUnicodeEx.argtypes = [C.c_uint32, C.c_uint32, C.POINTER(C.c_ubyte),
                              C.c_wchar_p, C.c_int, C.c_uint32, C.c_void_p]
     u.ToUnicodeEx.restype = C.c_int
+    u.GetKeyNameTextW.argtypes = [C.c_int32, C.c_wchar_p, C.c_int]
+    u.GetKeyNameTextW.restype = C.c_int
     hkl = u.GetKeyboardLayout(0)
     name = C.create_unicode_buffer(9)
     if not u.GetKeyboardLayoutNameW(name):
@@ -73,9 +75,15 @@ def inspect():
     scans = {str(scan): u.MapVirtualKeyExW(scan, 3, hkl)
              for scan in list(range(128)) + [0xE000 | s for s in range(128)]
              + [0xE100 | s for s in range(128)]}
+    names = {}
+    for ext in (0, 1):
+        for scan in range(1,128):
+            text = C.create_unicode_buffer(128)
+            count = u.GetKeyNameTextW((scan << 16) | (ext << 24), text,128)
+            if count: names[f"{ext}:{scan}"] = text.value
     return {"schema": 1, "klid": name.value, "architecture": platform.machine(),
             "os": platform.version(), "scans": scans, "translations": translations,
-            "dead_keys": dead_keys}
+            "dead_keys": dead_keys, "key_names": names}
 
 
 if __name__ == "__main__":

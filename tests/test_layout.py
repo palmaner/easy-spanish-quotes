@@ -25,6 +25,8 @@ class Dead(C.Structure):
     _fields_ = [('pair', C.c_uint32), ('composed', C.c_uint16), ('flags', C.c_uint16)]
 class Scan(C.Structure):
     _fields_ = [('scan', C.c_uint8), ('vk', C.c_uint16)]
+class Name(C.Structure):
+    _fields_ = [('scan', C.c_uint8), ('text', C.POINTER(C.c_uint16))]
 class Tables(C.Structure):
     _fields_ = [('mods', C.POINTER(Modifiers)), ('chars', C.POINTER(CharTable)),
                 ('dead', C.POINTER(Dead)), ('names', C.c_void_p), ('names_ext', C.c_void_p),
@@ -108,6 +110,18 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(native_dead,self.fixture['dead_keys'])
         for scan in range(128):
             self.assertEqual(table.scans[scan] & 255,self.fixture['scans'][str(scan)] or 255)
+        names={}
+        for ext, address in enumerate((table.names,table.names_ext)):
+            ptr=C.cast(address,C.POINTER(Name))
+            i=0
+            while ptr[i].scan:
+                units=[]; j=0
+                while ptr[i].text[j]:
+                    units.append(ptr[i].text[j]); j+=1
+                    self.assertLess(j,128)
+                names[f'{ext}:{ptr[i].scan}']=bytes(b for unit in units for b in unit.to_bytes(2,'little')).decode('utf-16-le')
+                i+=1; self.assertLess(i,128)
+        self.assertEqual(names,self.fixture['key_names'])
 
 
 if __name__ == '__main__': unittest.main()

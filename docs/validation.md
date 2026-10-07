@@ -47,3 +47,26 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
   behavior and scan flags still require native Windows integration validation.
 - W1 is partially checked, NOT passed: WDK ABI comparison, native loader and
   real dead-key sequences under the candidate remain outstanding.
+
+## Further prototype work
+
+- Native enrollment enumeration observed `0c0a:0000040a`. The prototype now
+  captures the enrollment language separately from the keyboard KLID.
+- GUI opened locally; Spanish labels, status refresh and accessible test-field
+  identification checked. Text-entry automation was interrupted by user input;
+  no candidate keyboard mapping was exercised. DPI/high-contrast acceptance is
+  still pending. GUI is a preview, not a completed first public release.
+- Eight Rust tests pass, including simulated intent failure, crash after native
+  mutation, completion-write failure and foreign-resource preservation. These
+  are shared-core protocol tests, not real privileged Windows fault tests.
+- Lifecycle commands compile but have NOT been run: they require an elevated
+  same-user terminal and explicit disposable single-user VM flag. Default policy
+  selection, every native rollback boundary, upgrades and production privilege
+  separation remain incomplete; see docs/experiments/windows.md.
+- Original key names added through public-API capture. Final unsigned candidate
+  size: 10,240 bytes; ZIP: 3,662 bytes. Signing cost remains unmeasured.
+- No VM runtime was found. User requested hardware tests remain documented as
+  pending. No reboot, installation or removal test was attempted on the host.
+- Final local checks: 10 Rust tests and 3 Python layout tests passed; rustfmt
+  check and Clippy with warnings denied passed. Native ID collision/exhaustion
+  tests were added. CI is configured separately; local results do not claim CI success.
