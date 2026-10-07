@@ -1,0 +1,10 @@
+[package]
+name = "easy-spanish-quotes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+esq-core = { path = "../core" }
+esq-windows = { path = "../windows" }
+serde_json.workspace = true

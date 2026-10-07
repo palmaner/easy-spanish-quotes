@@ -29,3 +29,21 @@ integration**, **untested**. Update this file with commands, versions and result
 
 M1 is not accepted until W1–W5 pass in a disposable Windows environment and the
 principal lifecycle passes on physical hardware. Publishing remains gated.
+
+## Automated and read-only results (2026-10-08)
+
+- Rust 1.99.0 GNU portable toolchain: SHA-256 checked against official channel metadata.
+- LLVM-MinGW 20260908: SHA-256 checked against maintainer release API digest.
+- `cargo test --workspace`: 4 core tests passed (mapping validation, SHA-256,
+  ownership path validation and preservation of independent changes).
+- `cargo run -- status`: live calling-thread Spanish KLID and empty AltGr+Z/X
+  detected; foreground HKL reported separately; activation remains unknown.
+- Layout compiled as AMD64, zero PE timestamp, no entrypoint/imports, exported
+  KbdLayerDescriptor. Artifact is unsigned and not installed.
+- `python -m unittest discover -s tests -v`: 3 tests passed, including compiled
+  descriptor differential checks against all fixture modifier/caps/num states.
+  Exactly 8 state differences: two intended keys × caps × num, all mods=6.
+- Dead composition table matches the committed public-API fixture. Alt+numpad
+  behavior and scan flags still require native Windows integration validation.
+- W1 is partially checked, NOT passed: WDK ABI comparison, native loader and
+  real dead-key sequences under the candidate remain outstanding.
