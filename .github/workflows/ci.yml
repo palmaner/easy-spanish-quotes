@@ -48,3 +48,9 @@ jobs:
           ./target/debug/easy-spanish-quotes.exe status
       - name: Catalog size measurement
         run: python tools/measure-catalog.py
+      - name: Build and verify unsigned experiment bundle
+        run: |
+          cargo fetch --locked
+          cargo build --release --workspace --locked
+          python tools/package-prototype.py
+          python tools/verify-bundle.py dist/easy-spanish-quotes-0.1.0-experimental-x64.zip

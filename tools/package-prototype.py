@@ -42,13 +42,13 @@ def package(cargo):
         'Unsigned prototype. Native install, reboot persistence and complete removal are UNTESTED.\n'
         'Automatic selection after reboot is not implemented. Not a public supported release.\n'
         'Use lifecycle operations only in a disposable single-user VM.\n',encoding='utf-8')
-    hashes={str(file.relative_to(destination)):hashlib.sha256(file.read_bytes()).hexdigest()
+    hashes={file.relative_to(destination).as_posix():hashlib.sha256(file.read_bytes()).hexdigest()
             for file in sorted(destination.rglob('*')) if file.is_file()}
     (destination/'SHA256.json').write_text(json.dumps(hashes,indent=2)+'\n',encoding='utf-8')
     archive=Path(str(destination)+'.zip')
     with zipfile.ZipFile(archive,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as zip_file:
         for file in sorted(destination.rglob('*')):
-            if file.is_file(): zip_file.write(file,str(file.relative_to(destination)))
+            if file.is_file(): zip_file.write(file,file.relative_to(destination).as_posix())
     print(archive)
 
 
