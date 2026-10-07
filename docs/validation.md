@@ -70,3 +70,9 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
 - Final local checks: 10 Rust tests and 3 Python layout tests passed; rustfmt
   check and Clippy with warnings denied passed. Native ID collision/exhaustion
   tests were added. CI is configured separately; local results do not claim CI success.
+- Hosted GitHub Actions run [37701178137](https://github.com/palmaner/easy-spanish-quotes/actions/runs/37701178137)
+  passed all four jobs for implementation commit 078b1dd: Windows/macOS/Linux
+  core checks and native Windows data/build checks. These do not install a layout.
+- Final review added hash/registration verification before enrollment/activation
+  and extended the lifecycle lock through error recording. Local checks passed
+  again. Detailed Rust standard-library license notices are included in bundles.

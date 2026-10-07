@@ -30,3 +30,15 @@ Windows outside the ordinary character tables and remains a native test case.
 
 The descriptor test loads only the freshly compiled, checked, no-entrypoint
 local candidate. It checks table data, not kernel keyboard-loader behavior.
+
+To create an unsigned local experiment bundle after building the layout:
+
+```powershell
+cargo build --release --workspace --locked
+python tools/package-prototype.py
+```
+
+The script refuses to overwrite an existing bundle. It includes CLI/GUI binaries,
+documentation, crate/toolchain licenses, dependency metadata and SHA-256 hashes.
+It neither signs nor publishes the bundle. The first supported public release
+remains gated on native lifecycle acceptance and signing.

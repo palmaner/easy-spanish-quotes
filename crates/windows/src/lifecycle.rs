@@ -141,6 +141,7 @@ fn is_enrolled(r: &Receipt) -> Result<bool, String> {
 
 pub fn select_owned() -> Result<(), String> {
     let r = read_receipt()?.ok_or("No owned layout to select")?;
+    verify_machine_installation(&r)?;
     if r.owner != identity()?.0 || !is_enrolled(&r)? {
         return Err("Owned layout is not enrolled for this user".into());
     }
@@ -379,7 +380,27 @@ fn allocate() -> Result<(String, String), String> {
     esq_core::allocate_windows_ids(&names, &ids).map_err(err)
 }
 
+fn verify_machine_installation(r: &Receipt) -> Result<(), String> {
+    payload_check()?;
+    if r.sha256 != digest(PAYLOAD) {
+        return Err("Layout belongs to a different build; refusing to load it".into());
+    }
+    if digest(&owned_bytes(&system_directory()?.join(&r.filename))?) != r.sha256 {
+        return Err("Native payload hash changed; refusing enrollment/activation".into());
+    }
+    let key = layouts(false)?.open_subkey(&r.klid).map_err(err)?;
+    let file: String = key.get_value("Layout File").map_err(err)?;
+    let id: String = key.get_value("Layout Id").map_err(err)?;
+    if file != r.filename || id != r.layout_id {
+        return Err("Layout registration changed; refusing enrollment/activation".into());
+    }
+    Ok(())
+}
+
 fn enroll(r: &Receipt, remove: bool) -> Result<(), String> {
+    if !remove {
+        verify_machine_installation(r)?;
+    }
     let module = input_module()?;
     unsafe {
         let function = GetProcAddress(module.0, c"InstallLayoutOrTip".as_ptr().cast())
@@ -464,6 +485,15 @@ pub fn installation_status() -> Result<Value, String> {
 
 /// Must be explicitly requested in a disposable single-user VM. No auto-elevation.
 pub fn lifecycle(command: &str, expected_owner: &str) -> Result<Value, String> {
+    let (owner, elevated) = identity()?;
+    if owner != expected_owner {
+        return Err("UAC changed the owner account; refusing mutation".into());
+    }
+    if !elevated {
+        return Err("Requires an elevated terminal in a disposable single-user VM".into());
+    }
+    // Keep serialization through both the native action and error recording.
+    let _lock = lock_installation()?;
     let result = lifecycle_inner(command, expected_owner);
     if result.is_err() {
         if let Ok(Some(mut r)) = read_receipt() {
@@ -485,7 +515,6 @@ fn lifecycle_inner(command: &str, expected_owner: &str) -> Result<Value, String>
     if !elevated {
         return Err("Requires an elevated terminal in a disposable single-user VM".into());
     }
-    let _lock = lock_installation()?;
     payload_check()?;
     if command == "install" && read_receipt()?.is_none() {
         let inspection = crate::inspect()?;
