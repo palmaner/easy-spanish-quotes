@@ -37,7 +37,11 @@ completion and flushes the registry. This bounds privileged paths in M1.
 Partial registration with missing ownership values is deliberately retained for
 manual W4 inspection; automatic recovery of every possible boundary is NOT yet
 implemented. Incomplete-copy recovery accepts only a prefix of the embedded
-payload with a matching pending-copy receipt. No arbitrary external DLL is used.
+payload with the original pending-copy receipt or durable interrupted-copy
+evidence captured before cleanup replaces that intent. Retrying cleanup retains
+this evidence. A completed copy never grants partial-file ownership, and an old
+receipt whose original copy intent was already lost cannot recover it by guessing.
+No arbitrary external DLL is used.
 
 No broad snapshot restoration is performed. If user settings differ after
 removal, the receipt is retained and the command reports repair-required. W3
