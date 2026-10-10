@@ -94,3 +94,20 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
 - Local verification: 13 Rust tests, three compiled-layout Python tests, rustfmt
   and Clippy with warnings denied pass. This is automated evidence only; W1–W5
   and physical-machine acceptance remain pending.
+
+## Observed-state diagnostics — 2026-10-10
+
+- Reports distinguish durable journal state from resource observations. Enabled
+  requires verified artifact/registration and enrollment for the receipt owner;
+  enrollment for another account is never treated as owner evidence.
+- Six shared-core scenario tests cover stale enabled receipts, modified/missing
+  resources, unreadable resources, interrupted intents, unknown owner enrollment,
+  and receipt cleanup after a pending-reboot DLL disappears. These simulate
+  observations; they do not exercise privileged Windows resources.
+- `doctor` is read-only, declares native validation pending and reports findings.
+  Returned repair/reboot states use exit codes 7/8. Full native error-code
+  classification remains pending. See diagnostics.md for the prototype contract.
+- Local verification: all 19 Rust tests and three Python layout tests passed;
+  rustfmt, Clippy with warnings denied, and release builds passed. Live read-only
+  `doctor` reported the original Spanish enrollment and no project installation.
+  No mutation or reboot test was run.

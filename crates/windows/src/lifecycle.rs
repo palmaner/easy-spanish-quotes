@@ -1,5 +1,6 @@
 //! Bounded, unsigned proof installer for disposable, single-user x64 VMs only.
 //! This is deliberately gated until W1-W5 and security/recovery tests pass.
+use esq_core::diagnostics::{diagnose, Observation};
 use esq_core::{digest, Receipt, State, PROFILE};
 use serde_json::{json, Value};
 use std::{
@@ -463,35 +464,48 @@ pub fn installation_status() -> Result<Value, String> {
         return Ok(json!({"state":"absent"}));
     };
     let path = system_directory()?.join(&r.filename);
-    let artifact = if !path_present(&path)? {
-        "absent"
-    } else {
-        match owned_bytes(&path) {
+    let artifact = match path_present(&path) {
+        Ok(false) => Observation::Absent,
+        Err(_) => Observation::Unknown,
+        Ok(true) => match owned_bytes(&path) {
             Ok(data) => {
                 if digest(&data) == r.sha256 {
-                    "verified"
+                    Observation::Verified
                 } else {
-                    "modified"
+                    Observation::Modified
                 }
             }
-            Err(_) => "unknown",
-        }
-    };
-    let enrolled = is_enrolled(&r)?;
-    let registry = match layouts(false)?.open_subkey(&r.klid) {
-        Ok(key) => match (
-            key.get_value::<String, _>("Layout File"),
-            key.get_value::<String, _>("Layout Id"),
-        ) {
-            (Ok(f), Ok(i)) if f == r.filename && i == r.layout_id => "verified",
-            _ => "modified",
+            Err(_) => Observation::Unknown,
         },
-        Err(e) if e.kind() == io::ErrorKind::NotFound => "absent",
-        Err(_) => "unknown",
     };
+    let owner_matches = identity()?.0 == r.owner;
+    let enrolled = if owner_matches {
+        is_enrolled(&r).ok()
+    } else {
+        None
+    };
+    let registry = match layouts(false) {
+        Err(_) => Observation::Unknown,
+        Ok(root) => match root.open_subkey(&r.klid) {
+            Ok(key) => match (
+                key.get_value::<String, _>("Layout File"),
+                key.get_value::<String, _>("Layout Id"),
+            ) {
+                (Ok(f), Ok(i)) if f == r.filename && i == r.layout_id => Observation::Verified,
+                (Err(e), _) if e.kind() != io::ErrorKind::NotFound => Observation::Unknown,
+                (_, Err(e)) if e.kind() != io::ErrorKind::NotFound => Observation::Unknown,
+                _ => Observation::Modified,
+            },
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Observation::Absent,
+            Err(_) => Observation::Unknown,
+        },
+    };
+    let diagnosis = diagnose(&r.state, r.pending.as_deref(), artifact, registry, enrolled);
     Ok(
-        json!({"state":r.state,"pending":r.pending,"klid":r.klid,"artifact":artifact,
-        "registry":registry,"enrolled":enrolled,"experimental":true,"activation":"unknown"}),
+        json!({"state":diagnosis.state,"journal_state":r.state,"findings":diagnosis.findings,
+        "pending":r.pending,"klid":r.klid,"artifact":artifact,
+        "registry":registry,"enrolled":enrolled,"owner_matches":owner_matches,
+        "experimental":true,"activation":"unknown"}),
     )
 }
 

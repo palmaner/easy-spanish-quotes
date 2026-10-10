@@ -30,6 +30,7 @@ el usuario final no tendrá que instalarlas.
 ```powershell
 cargo test --workspace
 cargo run -- status
+cargo run -- doctor
 cargo run -- gui
 ```
 
@@ -41,6 +42,8 @@ La instalación experimental está restringida a una VM desechable con un único
 usuario; consulta [el protocolo de pruebas](docs/experiments/windows.md).
 La selección automática después de reiniciar todavía no está implementada.
 Los comandos de instalación no se han validado en un sistema real.
+El [diagnóstico de solo lectura](docs/diagnostics.md) compara el recibo con los
+recursos observados y comunica inconsistencias sin modificar la configuración.
 
 ## Licencia
 

@@ -13,7 +13,16 @@ pub fn main() {
         return;
     }
     let result = match command {
-        "status" | "doctor" => esq_windows::inspect(),
+        "status" => esq_windows::inspect(),
+        "doctor" => esq_windows::inspect().map(|mut status| {
+            status["doctor"] = serde_json::json!({
+                "read_only": true,
+                "findings": status["installation"]["findings"].as_array().cloned().unwrap_or_default(),
+                "native_validation": "pending",
+                "supported_release": false
+            });
+            status
+        }),
         #[cfg(windows)]
         "install" | "enable" | "disable" | "uninstall" | "repair" => {
             if !args.iter().any(|s| s == "--single-user-vm") {
@@ -37,7 +46,17 @@ pub fn main() {
         }
     };
     match result {
-        Ok(status) => println!("{}", serde_json::to_string_pretty(&status).unwrap()),
+        Ok(status) => {
+            println!("{}", serde_json::to_string_pretty(&status).unwrap());
+            if command != "status" {
+                let state = status.get("installation").unwrap_or(&status)["state"].as_str();
+                match state {
+                    Some("repair-required") => std::process::exit(7),
+                    Some("pending-reboot") => std::process::exit(8),
+                    _ => (),
+                }
+            }
+        }
         Err(error) => {
             eprintln!("{error}");
             std::process::exit(3);

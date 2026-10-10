@@ -8,6 +8,7 @@ use std::{
 };
 
 pub const PROFILE: &str = "es-ES-altgr-zx-v1";
+pub mod diagnostics;
 pub mod recovery;
 
 pub fn allocate_windows_ids(
