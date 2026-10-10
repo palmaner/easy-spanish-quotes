@@ -1,5 +1,6 @@
 /* Independently declared public Windows keyboard-layout ABI. No SDK source copied.
- * Must be checked against the installed WDK before supported release. */
+ * Compared with external SDK 10.0.28000.2526 kbd.h by check_abi.c.
+ * Supported SDK/WDK builds and native loader validation remain pending. */
 #pragma once
 #include <stdint.h>
 typedef struct { uint8_t vk, bits; } ESQ_VK_BIT;

@@ -13,7 +13,10 @@
 Hardware tests remain pending at the user's request. No supported release is
 published and no layout is installed on the developer's working machine.
 
-Next native work: compare the independently declared descriptor/scancode flags
-against current WDK; run W1–W5 in a disposable VM; measure actual user-state
+The descriptor's field sizes/offsets and constants now pass a compile-only
+comparison with the official SDK keyboard header; E1 Pause flag handling was
+corrected against Microsoft's sample. This closes an automated portion of W1.
+
+Next native work: perform the supported SDK/WDK build; run W1–W5 in a disposable VM; measure actual user-state
 deltas; implement precise default-policy restoration; close all partial-native
 recovery cases. Production architecture commitments remain behind this gate.

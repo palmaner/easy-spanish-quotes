@@ -14,3 +14,8 @@ signed and validated variants are a worthwhile first-release commitment.
 Keep the single Z/X preset until native lifecycle acceptance; then measure a
 small preset set against all ordered pairs before expanding customization.
 No signing certificate is configured and no signed-size estimate is presented.
+
+After the E1 Pause flag correction on 2026-10-10, the DLL remains 10,240 bytes;
+its ZIP is 3,658 bytes. Payload SHA-256:
+`80137fab8f19a63cc9fd97c51f7cb915ed6b3493247203986436a7b97c4fde77`.
+Earlier measured artifacts are retained; they are not the corrected candidate.

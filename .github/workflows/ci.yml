@@ -36,6 +36,13 @@ jobs:
           "$PWD/.tools/llvm-mingw-20260908-ucrt-x86_64/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Native source
         run: python tools/generate_layout.py
+      - name: Compare descriptor ABI with pinned official SDK header
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://api.nuget.org/v3-flatcontainer/microsoft.windows.sdk.cpp/10.0.28000.2526/microsoft.windows.sdk.cpp.10.0.28000.2526.nupkg -OutFile .tools/sdk.nupkg
+          if ((Get-FileHash .tools/sdk.nupkg -Algorithm SHA256).Hash -ne 'BE1B419491607EAE6F7C57844EBAB39FACE9643C51E2AF1D9176A3BA0D0B23FC') { throw 'SDK package digest mismatch' }
+          python -c "import zipfile,pathlib; p=pathlib.Path('.tools/sdk-reference'); p.mkdir(); (p/'kbd.h').write_bytes(zipfile.ZipFile('.tools/sdk.nupkg').read('c/Include/10.0.28000.0/um/kbd.h'))"
+          python tools/check-layout-abi.py --kbd-header .tools/sdk-reference/kbd.h
       - name: Build no-entrypoint layout with pinned LLVM
         shell: pwsh
         run: |

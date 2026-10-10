@@ -110,6 +110,18 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(native_dead,self.fixture['dead_keys'])
         for scan in range(128):
             self.assertEqual(table.scans[scan] & 255,self.fixture['scans'][str(scan)] or 255)
+        special_flags={0x36:0x100,0x37:0x200,0x45:0x300,0x46:0x200}
+        special_flags.update({scan:0xc00 for scan in (0x47,0x48,0x49,0x4b,0x4c,0x4d,0x4f,0x50,0x51,0x52,0x53)})
+        for scan in range(128):
+            self.assertEqual(table.scans[scan] & 0xff00,special_flags.get(scan,0))
+        for prefix, ptr in ((0xe000,table.e0),(0xe100,table.e1)):
+            entries={}; i=0
+            while ptr[i].scan:
+                entries[ptr[i].scan]=ptr[i].vk
+                i+=1; self.assertLess(i,128)
+            expected={scan:self.fixture['scans'][str(prefix|scan)] | (0x100 if prefix==0xe000 else 0)
+                      for scan in range(128) if self.fixture['scans'][str(prefix|scan)]}
+            self.assertEqual(entries,expected)
         names={}
         for ext, address in enumerate((table.names,table.names_ext)):
             ptr=C.cast(address,C.POINTER(Name))

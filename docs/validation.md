@@ -123,3 +123,25 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
   denied writes; no external directory permissions were changed.
 - Local Rust tests (19 core plus three parser scenarios in each binary), Clippy
   and all six Python tests passed. Native lifecycle validation remains pending.
+
+## Header ABI and scan flags — 2026-10-10
+
+- External reference: Microsoft.Windows.SDK.cpp 10.0.28000.2526 from the official
+  NuGet endpoint. Package SHA-256:
+  `be1b419491607eae6f7c57844ebab39face9643c51e2af1d9176a3ba0d0b23fc`.
+  kbd.h SHA-256: `45c584d1df780dc149a5dea0a8cda38a35fd9b7fd82eb0d91c4aeab2018a1493`.
+  These are observed download hashes, now pinned for repeat checks; NuGet package
+  signature verification was not performed. Headers remain in ignored tools.
+- Compile-only assertions with pinned LLVM-MinGW passed for all descriptor
+  offsets/member sizes, subsidiary structures, modifier-tail offset, flags and
+  character sentinels. Windows primitive types came from LLVM-MinGW; a full
+  Microsoft compiler/SDK/WDK build remains pending.
+- [Microsoft's keyboard sample](https://github.com/microsoft/Windows-driver-samples/blob/main/input/layout/all_kbds/kbdgr/kbdgr.c)
+  distinguishes extended E0 entries from E1 Pause. The emitter incorrectly added
+  KBDEXT to both prefixes; corrected E1 entries now preserve the unflagged VK.
+  Compiled-descriptor tests check all scan high flags and E0/E1 tables, alongside
+  fixture translations. All six Python tests passed after rebuilding.
+- This is an automated W1 improvement, not native-loader acceptance. App input,
+  installation, logout/reboot persistence and complete removal remain untested.
+- Acquisition references: [Microsoft WDK NuGet guidance](https://learn.microsoft.com/en-us/windows-hardware/drivers/install-the-wdk-using-nuget)
+  and [the pinned SDK package](https://www.nuget.org/packages/Microsoft.Windows.SDK.cpp/10.0.28000.2526).

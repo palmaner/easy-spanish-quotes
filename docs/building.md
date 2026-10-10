@@ -18,8 +18,8 @@ cargo run --locked -- status
 
 The layout emitter accepts only the committed Spanish fixture, not arbitrary
 layouts. It produces C source and an unsigned DLL in build/layout. Header ABI
-declarations are independently authored and must be compared to the current
-WDK before supported release. The LLVM build proves toolchain feasibility; it
+declarations are independently authored and compared against the external
+SDK 10.0.28000.2526 keyboard header. The LLVM build proves toolchain feasibility; it
 does not replace the planned supported SDK/WDK build and integration gate.
 
 The fixture was captured through public MapVirtualKeyEx/ToUnicodeEx APIs. It
@@ -48,3 +48,11 @@ For a subsequent experiment, use `python tools/package-prototype.py --revision
 lowercase ASCII letters, digits and hyphens. Both existing directories and ZIPs
 are checked before writes; earlier artifacts are preserved. Verify the new ZIP
 with `python tools/verify-bundle.py dist/easy-spanish-quotes-0.1.0-experimental-x64-<label>.zip`.
+
+The compile-only ABI comparison is `python tools/check-layout-abi.py --kbd-header
+<external-kbd.h>`. It requires LLVM-MinGW on PATH and compares every descriptor
+member's offset/size, subsidiary structures, modifier-tail offset and constants.
+The official header is acquired separately and is not checked in or included in
+experiment bundles. CI downloads the pinned SDK NuGet package and checks its
+SHA-256 before extracting just the header. This comparison uses LLVM-MinGW's
+Windows primitive types, not a full Microsoft SDK/WDK build.

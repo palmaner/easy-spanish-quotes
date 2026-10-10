@@ -82,7 +82,8 @@ def generate():
         out.append(f'static ESQ_SCAN {name}[] = {{')
         for s in range(128):
             vk = data["scans"][str(prefix | s)]
-            if vk: out.append(f'{{{s},{vk | 0x100}}},')
+            # E0 is extended; the E1 Pause entry has no KBDEXT in Microsoft samples.
+            if vk: out.append(f'{{{s},{vk | (0x100 if prefix == 0xE000 else 0)}}},')
         out.append('{0,0}};')
     for ext in (0,1):
         entries=[]
