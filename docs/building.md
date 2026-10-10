@@ -42,3 +42,9 @@ The script refuses to overwrite an existing bundle. It includes CLI/GUI binaries
 documentation, crate/toolchain licenses, dependency metadata and SHA-256 hashes.
 It neither signs nor publishes the bundle. The first supported public release
 remains gated on native lifecycle acceptance and signing.
+
+For a subsequent experiment, use `python tools/package-prototype.py --revision
+<label>` (for example `--revision cli-hardening`). The label accepts only 1–40
+lowercase ASCII letters, digits and hyphens. Both existing directories and ZIPs
+are checked before writes; earlier artifacts are preserved. Verify the new ZIP
+with `python tools/verify-bundle.py dist/easy-spanish-quotes-0.1.0-experimental-x64-<label>.zip`.

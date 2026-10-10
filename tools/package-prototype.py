@@ -5,6 +5,8 @@ Never signs, publishes or installs. Fails if a dependency license is missing.
 import argparse
 import hashlib
 import json
+import os
+import re
 import shutil
 import subprocess
 import zipfile
@@ -13,8 +15,20 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 
 
-def package(cargo):
-    destination=ROOT/'dist/easy-spanish-quotes-0.1.0-experimental-x64'
+def package_paths(root, revision=None):
+    if revision is not None and not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,39}', revision):
+        raise ValueError('Revision must be 1–40 lowercase ASCII letters, digits or hyphens')
+    name='easy-spanish-quotes-0.1.0-experimental-x64'
+    if revision is not None: name+='-'+revision
+    destination=root/'dist'/name
+    return destination, Path(str(destination)+'.zip')
+
+
+def package(cargo, revision=None):
+    destination, archive=package_paths(ROOT,revision)
+    # Check both outputs before writing; lexists also detects dangling links.
+    if os.path.lexists(destination) or os.path.lexists(archive):
+        raise FileExistsError('Bundle output already exists; choose a new --revision')
     # Never silently replace a previous bundle or user file.
     destination.mkdir(parents=True,exist_ok=False)
     for binary in ('easy-spanish-quotes.exe','esq-gui.exe'):
@@ -45,7 +59,6 @@ def package(cargo):
     hashes={file.relative_to(destination).as_posix():hashlib.sha256(file.read_bytes()).hexdigest()
             for file in sorted(destination.rglob('*')) if file.is_file()}
     (destination/'SHA256.json').write_text(json.dumps(hashes,indent=2)+'\n',encoding='utf-8')
-    archive=Path(str(destination)+'.zip')
     with zipfile.ZipFile(archive,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as zip_file:
         for file in sorted(destination.rglob('*')):
             if file.is_file(): zip_file.write(file,file.relative_to(destination).as_posix())
@@ -55,4 +68,6 @@ def package(cargo):
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument('--cargo',default='cargo')
-    package(parser.parse_args().cargo)
+    parser.add_argument('--revision',help='Optional safe suffix for a new bundle; never overwrites earlier outputs')
+    args=parser.parse_args()
+    package(args.cargo,args.revision)

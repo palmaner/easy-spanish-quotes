@@ -36,3 +36,8 @@ reparación y 8 si requieren reinicio. Los errores que impiden obtener el inform
 siguen devolviendo 3 en este prototipo; la clasificación completa de errores de
 la especificación todavía está pendiente. `doctor.native_validation` permanece
 en `pending`: no convierte las pruebas automatizadas en validación de Windows.
+
+Los argumentos se validan por completo antes de ejecutar el comando. Una opción
+desconocida, repetida o incompatible devuelve 2; un comando no implementado
+devuelve 3. `--owner` requiere un valor SID y no puede consumir otra opción.
+`--version` muestra la versión experimental. No existe una opción `--force`.

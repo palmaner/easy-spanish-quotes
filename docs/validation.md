@@ -111,3 +111,15 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
   rustfmt, Clippy with warnings denied, and release builds passed. Live read-only
   `doctor` reported the original Spanish enrollment and no project installation.
   No mutation or reboot test was run.
+
+## Argument and bundle isolation checks — 2026-10-10
+
+- All command arguments are parsed before dispatch, including the GUI's elevated
+  helper arguments. Three parser scenarios per binary cover unknown/duplicate
+  flags, malformed or missing owner values, defaults and unsupported commands.
+- Three packaging tests verify rejected traversal labels and preservation of
+  existing archives/directories before build-tool invocation. Tests use an
+  isolated workspace directory because the sandbox's default temporary directory
+  denied writes; no external directory permissions were changed.
+- Local Rust tests (19 core plus three parser scenarios in each binary), Clippy
+  and all six Python tests passed. Native lifecycle validation remains pending.

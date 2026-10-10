@@ -1,12 +1,15 @@
+mod arguments;
+
 pub fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let command = args
-        .first()
-        .map(String::as_str)
-        .unwrap_or(if cfg!(windows) { "gui" } else { "help" });
+    let request = arguments::parse(&args, cfg!(windows)).unwrap_or_else(|error| {
+        eprintln!("{}", error.message);
+        std::process::exit(error.exit_code);
+    });
+    let command = request.command.as_str();
     #[cfg(windows)]
     if command == "gui" {
-        if let Err(error) = esq_windows::gui(args.iter().any(|s| s == "--single-user-vm")) {
+        if let Err(error) = esq_windows::gui(request.single_user_vm) {
             eprintln!("{error}");
             std::process::exit(6);
         }
@@ -25,18 +28,21 @@ pub fn main() {
         }),
         #[cfg(windows)]
         "install" | "enable" | "disable" | "uninstall" | "repair" => {
-            if !args.iter().any(|s| s == "--single-user-vm") {
+            if !request.single_user_vm {
                 eprintln!("Instalación experimental: solo máquinas virtuales desechables con un único usuario. Se requiere --single-user-vm.");
                 std::process::exit(3);
             }
-            let owner = args
-                .windows(2)
-                .find(|w| w[0] == "--owner")
-                .map(|w| w[1].clone())
-                .unwrap_or_else(|| esq_windows::identity().map(|x| x.0).unwrap_or_default());
-            esq_windows::lifecycle(command, &owner)
+            let owner = match request.owner {
+                Some(owner) => Ok(owner),
+                None => esq_windows::identity().map(|x| x.0),
+            };
+            owner.and_then(|owner| esq_windows::lifecycle(command, &owner))
         }
-        "help" | "--help" | "-h" => {
+        "version" => {
+            println!("easy-spanish-quotes {} — experimental", env!("CARGO_PKG_VERSION"));
+            return;
+        }
+        "help" => {
             println!("easy-spanish-quotes — prototipo experimental\n\nstatus | doctor [--json]\ngui\ninstall | enable | disable | uninstall | repair --single-user-vm\n\nAltGr+Z → «  AltGr+X → »\nLas operaciones nativas requieren un terminal elevado y validación en Windows desechable.");
             return;
         }
