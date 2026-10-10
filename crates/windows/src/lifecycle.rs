@@ -182,6 +182,15 @@ fn owned_bytes(path: &Path) -> Result<Vec<u8>, String> {
     }
     fs::read(path).map_err(err)
 }
+/// Absence is evidence only when the OS explicitly reports NotFound.
+/// symlink_metadata also observes dangling links instead of following them.
+fn path_present(path: &Path) -> Result<bool, String> {
+    match fs::symlink_metadata(path) {
+        Ok(_) => Ok(true),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(false),
+        Err(e) => Err(err(e)),
+    }
+}
 fn reject_other_loaded_users(r: &Receipt) -> Result<(), String> {
     let users = RegKey::predef(HKEY_USERS);
     for sid in users.enum_keys() {
@@ -454,16 +463,19 @@ pub fn installation_status() -> Result<Value, String> {
         return Ok(json!({"state":"absent"}));
     };
     let path = system_directory()?.join(&r.filename);
-    let artifact = match fs::read(&path) {
-        Ok(data) => {
-            if digest(&data) == r.sha256 {
-                "verified"
-            } else {
-                "modified"
+    let artifact = if !path_present(&path)? {
+        "absent"
+    } else {
+        match owned_bytes(&path) {
+            Ok(data) => {
+                if digest(&data) == r.sha256 {
+                    "verified"
+                } else {
+                    "modified"
+                }
             }
+            Err(_) => "unknown",
         }
-        Err(e) if e.kind() == io::ErrorKind::NotFound => "absent",
-        Err(_) => "unknown",
     };
     let enrolled = is_enrolled(&r)?;
     let registry = match layouts(false)?.open_subkey(&r.klid) {
@@ -545,7 +557,7 @@ fn lifecycle_inner(command: &str, expected_owner: &str) -> Result<Value, String>
         }
         let sha256 = digest(PAYLOAD);
         let filename = format!("esq-{}.dll", &sha256[..16]);
-        if system_directory()?.join(&filename).exists() {
+        if path_present(&system_directory()?.join(&filename))? {
             return Err("Payload path already exists without ownership receipt".into());
         }
         let mut r = Receipt {
@@ -561,6 +573,7 @@ fn lifecycle_inner(command: &str, expected_owner: &str) -> Result<Value, String>
             state: State::Absent,
             pending: None,
             completed: vec![],
+            cleanup_partial_copy: false,
             baseline_user_state: user_snapshot()?,
         };
         let (_, disposition) = RegKey::predef(HKEY_LOCAL_MACHINE)
@@ -600,7 +613,13 @@ fn lifecycle_inner(command: &str, expected_owner: &str) -> Result<Value, String>
         r.state = State::InstalledDisabled;
         finish(&mut r, "register")?;
     }
-    let mut r = read_receipt()?.ok_or("No owned installation")?;
+    let mut r = match read_receipt()? {
+        Some(r) => r,
+        None if matches!(command, "disable" | "uninstall" | "repair") => {
+            return installation_status();
+        }
+        None => return Err("No owned installation".into()),
+    };
     if r.owner != owner || r.sha256 != digest(PAYLOAD) {
         return Err("Receipt belongs to another owner/build; refusing mutation".into());
     }
@@ -613,8 +632,8 @@ fn lifecycle_inner(command: &str, expected_owner: &str) -> Result<Value, String>
         r.state = State::Enabled;
         finish(&mut r, "enroll")?;
     } else if command == "disable" || command == "uninstall" || command == "repair" {
-        let partial_copy =
-            r.pending.as_deref() == Some("copy") && !r.completed.iter().any(|x| x == "copy");
+        r.prepare_cleanup();
+        // begin() flushes this evidence with the next intent before any mutation.
         begin(&mut r, "unenroll")?;
         if is_enrolled(&r)? {
             enroll(&r, true)?;
@@ -624,22 +643,24 @@ fn lifecycle_inner(command: &str, expected_owner: &str) -> Result<Value, String>
         if command != "disable" {
             reject_other_loaded_users(&r)?;
             let root = layouts(true)?;
-            if let Ok(key) = root.open_subkey(&r.klid) {
-                let filename: String = key.get_value("Layout File").map_err(err)?;
-                let id: String = key.get_value("Layout Id").map_err(err)?;
-                if filename != r.filename || id != r.layout_id {
-                    return Err("Registry ownership changed; refusing deletion".into());
+            match root.open_subkey(&r.klid) {
+                Ok(key) => {
+                    let filename: String = key.get_value("Layout File").map_err(err)?;
+                    let id: String = key.get_value("Layout Id").map_err(err)?;
+                    if filename != r.filename || id != r.layout_id {
+                        return Err("Registry ownership changed; refusing deletion".into());
+                    }
+                    begin(&mut r, "unregister")?;
+                    root.delete_subkey(&r.klid).map_err(err)?;
+                    finish(&mut r, "unregister")?;
                 }
-                begin(&mut r, "unregister")?;
-                root.delete_subkey(&r.klid).map_err(err)?;
-                finish(&mut r, "unregister")?;
+                Err(e) if e.kind() == io::ErrorKind::NotFound => (),
+                Err(e) => return Err(err(e)),
             }
             let path = system_directory()?.join(&r.filename);
-            if path.exists() {
+            if path_present(&path)? {
                 let data = owned_bytes(&path)?;
-                if digest(&data) != r.sha256
-                    && !(partial_copy && data.len() < PAYLOAD.len() && PAYLOAD.starts_with(&data))
-                {
+                if !r.owns_cleanup_bytes(PAYLOAD, &data) {
                     return Err("Artifact modified; refusing deletion".into());
                 }
                 begin(&mut r, "remove-file")?;
@@ -660,7 +681,7 @@ fn lifecycle_inner(command: &str, expected_owner: &str) -> Result<Value, String>
                 }
                 finish(&mut r, "remove-file")?;
             }
-            if path.exists() {
+            if path_present(&path)? {
                 return Err("Removal not verified".into());
             }
             if user_snapshot()? != r.baseline_user_state {

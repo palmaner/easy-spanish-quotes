@@ -76,3 +76,21 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
 - Final review added hash/registration verification before enrollment/activation
   and extended the lifecycle lock through error recording. Local checks passed
   again. Detailed Rust standard-library license notices are included in bundles.
+
+## Recovery review — 2026-10-10
+
+- Cleanup now durably preserves interrupted-copy evidence before replacing the
+  pending intent. Simulated receipt serialization/retry tests accept only the
+  original payload prefix, reject foreign bytes and other builds, and reject
+  partial deletion after a completed copy. Older receipts default to no partial
+  ownership unless their original interrupted-copy intent is still present.
+- Native cleanup distinguishes explicit missing-file/key errors from access
+  failures. Unknown observations retain the receipt; dangling links are observed
+  and rejected rather than interpreted as absence. Artifact diagnostics use the
+  same reparse-point checks as enrollment verification.
+- Repeated disable/uninstall/repair with no receipt returns absent. These native
+  branches compile but remain untested on an installed Windows layout. No host
+  registration, enrollment, removal or reboot was performed.
+- Local verification: 13 Rust tests, three compiled-layout Python tests, rustfmt
+  and Clippy with warnings denied pass. This is automated evidence only; W1–W5
+  and physical-machine acceptance remain pending.

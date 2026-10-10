@@ -66,11 +66,31 @@ pub struct Receipt {
     pub state: State,
     pub pending: Option<String>,
     pub completed: Vec<String>,
+    /// Durable evidence captured before cleanup replaces the interrupted copy intent.
+    #[serde(default)]
+    pub cleanup_partial_copy: bool,
     #[serde(default)]
     pub baseline_user_state: serde_json::Value,
 }
 
 impl Receipt {
+    pub fn prepare_cleanup(&mut self) {
+        if self.pending.as_deref() == Some("copy")
+            && !self.completed.iter().any(|step| step == "copy")
+        {
+            self.cleanup_partial_copy = true;
+        }
+    }
+
+    pub fn owns_cleanup_bytes(&self, payload: &[u8], bytes: &[u8]) -> bool {
+        // Partial-copy evidence is usable only with the exact original build.
+        digest(payload) == self.sha256
+            && (digest(bytes) == self.sha256
+                || (self.cleanup_partial_copy
+                    && bytes.len() < payload.len()
+                    && payload.starts_with(bytes)))
+    }
+
     pub fn validate(&self) -> Result<(), &'static str> {
         if self.schema != 1 || self.profile != PROFILE {
             return Err("Unknown receipt version/profile");
@@ -199,9 +219,8 @@ mod tests {
             "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
         );
     }
-    #[test]
-    fn reject_privileged_path_in_receipt() {
-        let mut r = Receipt {
+    fn receipt() -> Receipt {
+        Receipt {
             schema: 1,
             profile: PROFILE.into(),
             owner: "S-1-5-test".into(),
@@ -214,8 +233,51 @@ mod tests {
             state: State::Absent,
             pending: None,
             completed: vec![],
+            cleanup_partial_copy: false,
             baseline_user_state: serde_json::Value::Null,
-        };
+        }
+    }
+    #[test]
+    fn partial_copy_evidence_survives_cleanup_retry() {
+        let r = receipt();
+        let mut interrupted = r.clone();
+        interrupted.pending = Some("copy".into());
+        interrupted.prepare_cleanup();
+        interrupted.pending = Some("remove-file".into());
+        let resumed: Receipt =
+            serde_json::from_str(&serde_json::to_string(&interrupted).unwrap()).unwrap();
+        assert!(resumed.owns_cleanup_bytes(b"abc", b"ab"));
+        assert!(!resumed.owns_cleanup_bytes(b"abc", b"ax"));
+        assert!(!resumed.owns_cleanup_bytes(b"abcd", b"ab"));
+        assert!(!r.owns_cleanup_bytes(b"abc", b"ab"));
+        assert!(r.owns_cleanup_bytes(b"abc", b"abc"));
+    }
+    #[test]
+    fn completed_copy_never_authorizes_partial_deletion() {
+        let mut r = receipt();
+        r.pending = Some("copy".into());
+        r.completed.push("copy".into());
+        r.prepare_cleanup();
+        assert!(!r.owns_cleanup_bytes(b"abc", b"ab"));
+    }
+    #[test]
+    fn old_receipt_requires_original_copy_intent_for_partial_cleanup() {
+        let mut value = serde_json::to_value(receipt()).unwrap();
+        value
+            .as_object_mut()
+            .unwrap()
+            .remove("cleanup_partial_copy");
+        let mut r: Receipt = serde_json::from_value(value).unwrap();
+        r.pending = Some("remove-file".into());
+        r.prepare_cleanup();
+        assert!(!r.owns_cleanup_bytes(b"abc", b"ab"));
+        r.pending = Some("copy".into());
+        r.prepare_cleanup();
+        assert!(r.owns_cleanup_bytes(b"abc", b"ab"));
+    }
+    #[test]
+    fn reject_privileged_path_in_receipt() {
+        let mut r = receipt();
         assert!(r.validate().is_ok());
         r.filename = "../../KBDSP.DLL".into();
         assert!(r.validate().is_err());
