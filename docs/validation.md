@@ -217,3 +217,22 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
   `VERR_INVALID_POINTER`. It has not run. Further optical-drive changes are
   deferred while setup continues; this does not establish a Guest Additions or
   keyboard-layout defect.
+
+## Retry desktop and guest-access handoff — 2026-10-11
+
+- Corrected retry setup reached 94%, restarted automatically, and displayed the
+  Spanish Windows desktop. This confirms the prior invalid NetworkLocation value
+  no longer blocked reaching the desktop. Actual OS/security/profile baseline
+  collection remains pending; desktop display alone does not verify usability.
+- The desktop did not respond to attempted Start-menu input or normal ACPI
+  shutdown. Saved its state in a separate recovery snapshot, then cold-booted
+  with the verified nonbootable post-install DVD attached. Cold attachment
+  succeeded; earlier hot attachment had failed even for Oracle's original ISO.
+  The recovery boot reached the Windows lock screen. Guest sign-in and installer
+  security prompts require human interaction before automated access is possible.
+- Windows Authenticode verification of the unchanged Guest Additions launcher
+  and amd64 installer returned Valid, signer Oracle America, Inc. The DVD is
+  labelled ESQ_GUEST_TOOLS. Guest Additions installation remains unverified.
+- [CI for the live probe commit passed](https://github.com/palmaner/easy-spanish-quotes/actions/runs/38151805486).
+  No ESQ layout was installed in the guest or host. A verified clean baseline,
+  native loader/input tests, persistence and removal are still pending.
