@@ -145,3 +145,30 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
   installation, logout/reboot persistence and complete removal remain untested.
 - Acquisition references: [Microsoft WDK NuGet guidance](https://learn.microsoft.com/en-us/windows-hardware/drivers/install-the-wdk-using-nuget)
   and [the pinned SDK package](https://www.nuget.org/packages/Microsoft.Windows.SDK.cpp/10.0.28000.2526).
+
+## Disposable VM provisioning — 2026-10-11
+
+- Created an isolated Windows 11 x64 VM with VirtualBox 7.2.20, four virtual
+  CPUs, 8 GiB RAM and an 80 GiB dynamically allocated disk. EFI Secure Boot and
+  virtual TPM 2.0 are configured; guest confirmation remains pending. NAT has
+  no forwarding rules; shared folders, clipboard and drag-and-drop are disabled.
+- The Spanish Windows ISO has SHA-256
+  `9828703784880421e6602504dfd99064e4cb739cc9b20aba22e3934372a14f9a`.
+  The unattended detector identified Windows 11 Pro, image index 6, build
+  26300.9457. Installation templates request Spanish Spain input, a dedicated
+  local test user and Guest Additions, without hardware-check bypass commands.
+  Credentials and generated installation answers remain outside version control.
+- Windows Setup was observed progressing. After the user reported completion,
+  the running guest displayed a black console. Waking the display did not clear
+  it; VirtualBox reported that Guest Additions were not installed or ready.
+  Installation completion and the actual guest configuration are therefore
+  **unverified**. Recovery investigation precedes a verified clean baseline.
+- Preserved an unverified recovery snapshot before restarting. The first restart
+  loaded `cdboot_noprompt.efi` from the unattended DVD. After detaching that DVD,
+  the guest loaded `bootmgfw.efi` from disk and displayed a Windows loading
+  spinner. This establishes disk boot, not completed setup or desktop readiness.
+  The DVD boot did not respond to a normal shutdown request; it was powered off
+  after preserving the recovery point. Native tests have not started.
+- No project layout has been installed in the VM or host. Native installation,
+  activation, logout/reboot persistence, rollback and removal remain pending;
+  physical hardware validation is also pending.
