@@ -169,6 +169,9 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
   spinner. This establishes disk boot, not completed setup or desktop readiness.
   The DVD boot did not respond to a normal shutdown request; it was powered off
   after preserving the recovery point. Native tests have not started.
+- Disk-only boot subsequently displayed Spanish Windows Setup at 0%, 33% and
+  42%, followed by loading screens. Setup was still in progress at the last
+  observation; there is no verified desktop or working guest-control session.
 - No project layout has been installed in the VM or host. Native installation,
   activation, logout/reboot persistence, rollback and removal remain pending;
   physical hardware validation is also pending.
