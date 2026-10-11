@@ -194,3 +194,26 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
   template; installation success and guest security settings are not yet verified.
 - No native layout lifecycle tests have run. They remain gated on a verified
   guest, Guest Additions access and a clean baseline snapshot.
+
+## Live translation probe preparation — 2026-10-11
+
+- Added a VM-only Rust example comparing 8,192 live ToUnicodeEx translations
+  and 768 MapVirtualKeyEx scan mappings with the original Spanish Spain layout.
+  It uses the existing ownership/enrollment checks before selection, expects
+  only AltGr+Z/X character changes, and attempts to restore the calling-thread
+  layout on exit. It reports native API differences and restoration separately.
+- Rustfmt, Clippy with warnings denied for all workspace targets, and the release
+  example build passed. Executing it without the required VM flag correctly
+  failed before accessing keyboard APIs. No installed-layout probe run occurred.
+  Application input, dead-key sequences, system default/order restoration and
+  persistence still need independent integration tests.
+- Retry setup logs showed the file-install phase completed and requested reboot.
+  Preserved that state in a recovery snapshot and cold-booted with the unattended
+  DVD detached. The next Windows installation phase progressed to 54%; desktop
+  readiness and Guest Additions remain unverified.
+- VirtualBox rejected attempts to hot-mount post-install optical media. A standard
+  nonbootable ISO was built locally and its four Windows installer hashes checked
+  against Oracle's existing Guest Additions ISO, but attaching it returned
+  `VERR_INVALID_POINTER`. It has not run. Further optical-drive changes are
+  deferred while setup continues; this does not establish a Guest Additions or
+  keyboard-layout defect.

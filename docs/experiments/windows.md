@@ -18,6 +18,17 @@ has not passed the WDK/native-loader gate, and cannot establish support claims.
 5. Type «Hola», all Spanish punctuation, accents, ñ/Ñ, dead-key combinations,
    Ctrl shortcuts and Alt+numpad in Notepad, Edge, Firefox, Terminal, VS Code
    and elevated Win32 apps. Close the manager and repeat. Record failures.
+   For an additional native API check, build the experimental probe with
+   `cargo build --release -p esq-windows --example native_translation_probe`.
+   Copy it to the VM, select the original Spanish Spain layout, then run
+   `native_translation_probe.exe --single-user-vm`. It verifies owned enrollment
+   before selecting the layout, compares 8,192 ToUnicodeEx results and 768 scan
+   mappings against the live original, and attempts to restore the calling-thread
+   selection on every exit path. This is an activation experiment: take the
+   baseline snapshot first and independently inspect selection/profile order
+   afterwards. Its JSON reports calling-thread restoration, not system default
+   restoration. Dead-key composition and real application input still require
+   the manual checks above. A compiled probe is not evidence these checks passed.
 6. Logout and reboot manually. Inspect enrollment/default and independently
    select/test the layout. The prototype enrolls persistently but intentionally
    does not change default policy until W3 proves a reversible mechanism.
