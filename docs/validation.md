@@ -236,3 +236,41 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
 - [CI for the live probe commit passed](https://github.com/palmaner/easy-spanish-quotes/actions/runs/38151805486).
   No ESQ layout was installed in the guest or host. A verified clean baseline,
   native loader/input tests, persistence and removal are still pending.
+
+## Authorized guest sign-in and administrator-access retry — 2026-10-11
+
+- With explicit user authorization for the disposable guest, completed sign-in
+  and observed a usable desktop and the ESQ_GUEST_TOOLS optical drive. Host
+  automation initially returned GetCursorPos access denied; foreground access
+  subsequently recovered. Console text/key automation did not establish reliable
+  input. Native VirtualBox keyboard input with separately paced make/break
+  scancodes successfully signed in. Two earlier string-input attempts were
+  rejected; a harmless aA!123 sample verified the expected character mapping.
+- The Oracle-signed Guest Additions launcher ran but reported that administrator
+  rights were required. Launching it as administrator produced a guest UAC prompt
+  with only No, with no available administrator credential fields. Installation
+  did not complete. This is an account/elevation blocker, not an ESQ layout test
+  failure.
+- The generated answer file specified administrators;users. Microsoft's
+  [LocalAccount Group documentation](https://learn.microsoft.com/en-us/windows-hardware/customize/desktop/unattend/microsoft-windows-shell-setup-useraccounts-localaccounts-localaccount-group)
+  documents the language-neutral names Administrators and Users. A new template
+  uses Administrators exactly. The earlier spelling is a candidate cause; its
+  causality has not been established from guest group membership or setup logs.
+- Preserved the retry VM's current disk, TPM and saved state. Read-only inspection
+  of its complete VDI parent/child chain found an FVE-FS signature on the Windows
+  partition; the NTFS-only parser could not extract current setup logs. No offline
+  account, registry, encryption or host security changes were made.
+- Created a separate retry2 VM with the same four CPUs, 8 GiB RAM, 80 GiB dynamic
+  disk, EFI/Secure Boot configuration, TPM 2.0, NAT, disabled clipboard and no
+  shared folders. Its generated answer file passed the new preflight, and setup
+  was started. Both previous VMs remain preserved. Successful setup, actual
+  administrator membership, Guest Additions and the security/profile baseline
+  remain to be observed.
+- Added a credential-safe answer-file preflight rejecting deprecated
+  NetworkLocation, a missing expected account/password and noncanonical or absent
+  Administrators membership configuration. All 11 Python test methods passed.
+  The prior answer file is rejected as expected. This check does not prove actual
+  privileges, installation success or language-dependent behavior on Windows.
+- Native installation, activation, app input, logout/reboot persistence,
+  original-layout preservation, rollback and clean removal remain untested. No
+  ESQ layout has been installed on either the guest or host.

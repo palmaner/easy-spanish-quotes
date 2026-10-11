@@ -4,6 +4,14 @@
 Snapshot the VM first. Do not use a working computer. The prototype is unsigned,
 has not passed the WDK/native-loader gate, and cannot establish support claims.
 
+When using unattended Windows Setup, validate the generated answer file before
+boot with `python tools/check-unattend.py PATH_TO_PRIVATE_ANSWER_FILE`. Keep that
+file and credentials outside Git. The preflight requires the documented
+`Administrators` group spelling for the expected test account and rejects the
+deprecated NetworkLocation setting. After setup, independently verify actual
+administrator membership, same-user elevation, Spanish input profiles, Secure
+Boot and TPM state. A preflight pass or a visible desktop is not a clean baseline.
+
 1. Select Spanish Spain, build the layout and manager, run all automated checks.
 2. Save `easy-spanish-quotes status` output, original profiles/order/default
    preference, keyboard shortcuts and registry values. Note exact OS/security
