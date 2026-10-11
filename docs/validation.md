@@ -175,3 +175,22 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
 - No project layout has been installed in the VM or host. Native installation,
   activation, logout/reboot persistence, rollback and removal remain pending;
   physical hardware validation is also pending.
+
+## Setup failure diagnosis and retry — 2026-10-11
+
+- A later boot displayed Windows' installation-cannot-complete dialog. Saved
+  the failed VM state and extracted only setup logs from its VDI parent/child
+  chain with read-only Dissect parsers, without mounting or editing the disk.
+  Full logs and installation credentials remain in ignored local storage.
+- `Panther/UnattendGC/setuperr.log` identifies an invalid
+  `Microsoft-Windows-Shell-Setup/OOBE/NetworkLocation` value (`Public`) and
+  error `0x80220005`. The invalid value was introduced while preparing the
+  experiment's local template; this is a provisioning failure, not a keyboard
+  layout failure. The next boot also reports failed OOBE pass `0x8030000C`.
+- Removed the obsolete setting rather than assigning another network policy.
+  [Microsoft documents NetworkLocation as deprecated since Windows 10](https://learn.microsoft.com/en-us/windows-hardware/customize/desktop/unattend/microsoft-windows-shell-setup-oobe-networklocation).
+  Prepared a fresh retry VM/disk with the same resources, retaining the failed
+  VM, recovery snapshot and logs. The retry has started with the corrected
+  template; installation success and guest security settings are not yet verified.
+- No native layout lifecycle tests have run. They remain gated on a verified
+  guest, Guest Additions access and a clean baseline snapshot.
