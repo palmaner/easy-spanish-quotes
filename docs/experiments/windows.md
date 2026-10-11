@@ -11,6 +11,13 @@ file and credentials outside Git. The preflight requires the documented
 deprecated NetworkLocation setting. After setup, independently verify actual
 administrator membership, same-user elevation, Spanish input profiles, Secure
 Boot and TPM state. A preflight pass or a visible desktop is not a clean baseline.
+The read-only `tools/windows-baseline.ps1 -SingleUserVm` report records configured
+language tips, the default-input override and preload ordering, the original
+Spanish registration, administrator SID presence in the token, active elevation,
+and available security queries. Run it before installation and again after
+removal. Null security values with a limitation mean unverified, not disabled;
+the administrator SID in a filtered token does not establish active elevation.
+Keep its output private until machine/account identifiers have been reviewed.
 
 1. Select Spanish Spain, build the layout and manager, run all automated checks.
 2. Save `easy-spanish-quotes status` output, original profiles/order/default

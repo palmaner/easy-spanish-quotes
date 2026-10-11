@@ -274,3 +274,9 @@ principal lifecycle passes on physical hardware. Publishing remains gated.
 - Native installation, activation, app input, logout/reboot persistence,
   original-layout preservation, rollback and clean removal remain untested. No
   ESQ layout has been installed on either the guest or host.
+- [CI for the preflight commit passed](https://github.com/palmaner/easy-spanish-quotes/actions/runs/38155669667).
+  Added a read-only Windows baseline collector separating administrator SID
+  presence from active elevation and null security queries from disabled
+  security. PowerShell syntax parsing passed. Host script execution was refused
+  by the existing execution policy; that policy was not changed. Collector
+  execution inside the guest is pending.
